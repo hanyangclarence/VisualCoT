@@ -1,0 +1,50 @@
+[
+  {
+    "question": "What is the white object on the wall above the TV?",
+    "context": "This is a bedroom. There is a bed with a white comforter and a white pillow. There is a TV on the wall.",
+    "answer": "Air conditioning unit",
+    "rationale": "Air conditioners are often mounted on walls. They are white and have a rectangular shape. They are usually placed high on the wall to distribute cool air throughout the room."
+  },
+  {
+    "question": "What material is the ceiling in the living room?",
+    "context": "This is a living room. There is a sofa, a coffee table, and a TV. The walls are painted white.",
+    "answer": "Wood panel",
+    "rationale": "Although the ceiling is not described in the context, wood panels are often used for ceilings. They are usually brown and have a textured surface. They are commonly used in living rooms to add warmth and character to the space."
+  },
+  {
+    "question": "What is in between the two picture frames on the blue wall in the living room?",
+    "context": "This is a living room. There is a sofa, a coffee table, and a TV. The walls are painted white. There are two picture frames on the wall.",
+    "answer": "The TV",
+    "rationale": "The TV is usually placed on the wall in the living room. The TV is a common feature in living rooms and is usually placed in a central location for easy viewing."
+  },
+  {
+    "question": "Is there room on the dining table to eat?",
+    "context": "This is a dining room. There is a dining table with four chairs. There is a vase with flowers on the table.",
+    "answer": "Yes",
+    "rationale": "The dining table is described as having four chairs, which indicates that there is enough seating for four people. The vase with flowers on the table suggests that the table is set for a meal, so there is room on the table to eat."
+  },
+  {
+    "question": "Is the front door open?",
+    "context": "This is a hallway. The wooden door is closed. There is a mirror on the door.",
+    "answer": "No",
+    "rationale": "The context describes the wooden door as closed, which indicates that the front door is not open."
+  },
+  {
+    "question": "What should I do to cool down?",
+    "context": "This is a bedroom. There is a bed with a white comforter and a white pillow. There is a TV on the wall. There is an air conditioning unit above the TV.",
+    "answer": "Turn on the AC unit",
+    "rationale": "The air conditioning unit is described as being above the TV, which indicates that it is used for cooling the room. To cool down, you should turn on the air conditioning unit."
+  },
+  {
+    "question": "What is the large, round, and black object on the wall?",
+    "context": "This is a living room. There is a sofa, a coffee table, and a TV. There is a round clock on the wall.",
+    "answer": "A clock",
+    "rationale": "The context describes a round clock on the wall, which is a large, round, and black object. Clocks are commonly placed on walls in living rooms to tell time and add a decorative element to the space."
+  },
+  {
+    "question": "What is to the left of the staircase?",
+    "context": "This is a hallway. There is a wooden staircase with a white railing.",
+    "answer": "A storage closet",
+    "rationale": "The context doesn't describe what is to the left of the staircase, but a storage closet is a common feature in hallways. Storage closets are used to store items such as coats, shoes, and cleaning supplies, and are often located near the entrance of a home."
+  }
+]

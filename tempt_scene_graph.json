@@ -1,0 +1,50 @@
+[
+  {
+    "class": "Table",
+    "caption": "A wooden table with four legs. It is covered with a red and white checkered tablecloth."
+  },
+  {
+    "class": "Chair",
+    "caption": "A wooden chair with a red cushion."
+  },
+  {
+    "class": "Air Conditioner",
+    "caption": "A large air conditioner that is mounted on the wall."
+  },
+  {
+    "class": "Couch",
+    "caption": "A large, comfortable couch with a floral pattern."
+  },
+  {
+      "class": "Lamp",
+      "caption": "A small lamp with a white shade."
+  },
+  {
+      "class": "Television",
+      "caption": "A large television with a flat screen."
+  },
+  {
+      "class": "Coffee Table",
+      "caption": "A small coffee table with a glass top."
+  },
+  {
+      "class": "Bookshelf",
+      "caption": "A large bookshelf filled with books."
+  },
+  {
+      "class": "Desk",
+      "caption": "A wooden desk with a computer and a lamp."
+  },
+  {
+      "class": "Dining Table",
+      "caption": "A large dining table with six chairs."
+  },
+  {
+      "class": "Refrigerator",
+      "caption": "A large refrigerator with a freezer on top."
+  },
+  {
+      "class": "Oven",
+      "caption": "A large oven with a stove on top."
+  }
+]

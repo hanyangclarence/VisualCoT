@@ -1,0 +1,89 @@
+[
+  {
+    "question": "What is the white object on the wall above the TV?",
+    "options": [
+        "TV",
+        "Speaker",
+        "Clock",
+        "Mirror",
+        "Air Conditioner",
+        "Microwave Oven"
+    ],
+    "answer": "Air Conditioner"
+  },
+  {
+    "question": "What color is the staircase railing?",
+    "options": [
+      "Staircase",
+      "PC",
+      "Window",
+      "Mirror"
+    ],
+    "answer": "Staircase"
+  },
+  {
+    "question": "What is in between the two picture frames on the blue wall in the living room?",
+    "options": [
+      "Picture Frame",
+      "Curtain",
+      "Window",
+      "Door"
+    ],
+    "answer": "Picture Frame"
+  },
+  {
+    "question": "Is there room on the dining table to eat?",
+    "options": [
+        "Plate",
+        "Chair",
+        "Table",
+        "Curtain",
+        "Sink"
+    ],
+    "answer": "Table"
+  },
+  {
+    "question": "Is the dining table set with table mats?",
+    "options": [
+        "Table",
+        "Chair",
+        "Book",
+        "Mirror",
+        "Curtain"
+    ],
+    "answer": "Table"
+  },
+  {
+    "question": "What should I do to cool down?",
+    "options": [
+        "Air Conditioner",
+        "Microwave Oven",
+        "Speaker",
+        "TV",
+        "Clock"
+    ],
+    "answer": "Air Conditioner"
+  },
+  {
+    "question":  "What type of car is in the garage?",
+    "options": [
+        "Bike",
+        "Truck",
+        "Bus",
+        "Car",
+        "Scooter"
+    ],
+    "answer": "Car"
+  },
+  {
+    "question": "Where is the broom?",
+    "options": [
+        "Chair",
+        "Broom",
+        "Table",
+        "Curtain",
+        "Sink"
+    ],
+    "answer": "Broom"
+  }
+]
