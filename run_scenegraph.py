@@ -1,21 +1,18 @@
 import os
-import csv
 import argparse
 import numpy as np
-import multiprocessing
 import time
 import json
 import time
 import torch
 import random
 from openai import AzureOpenAI
-from tqdm import tqdm
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
 from transformers import GPT2Tokenizer
 import pdb
 import pickle
-import glob
 from transformers import CLIPProcessor, CLIPModel
-from transformers import CLIPTokenizer, CLIPTextModel
 from PIL import Image
 import inspect
 
@@ -477,6 +474,28 @@ class VisualCOT_AOKVQA:
 
         return response.choices[0].message.content
 
+    def query_mistral(self, system_prompt: str, prompt: str, **kwargs):
+        # TODO: not tested yet!
+        client = MistralClient(api_key=self.apikey_list[self.apikey_idx])
+        successful = False
+        while not successful:
+            try:
+                self.sleep()
+                response = client.chat(
+                    model='mistral-large-latest',
+                    messages=[
+                        ChatMessage(role='system', content=system_prompt),
+                        ChatMessage(role='user', content=prompt)
+                    ],
+                    **kwargs
+                )
+                successful = True
+            except Exception as e:
+                print(f'Error found in generating answer with mistral: {e}')
+                print(f"Prompt: {prompt}")
+
+        return response.choices[0].message.content
+
     def interactive(self, attr_list):
         question = self.given_question
 
@@ -565,12 +584,7 @@ class VisualCOT_AOKVQA:
 
 
         elif self.args.engine == "chat":
-
             response = self.query_gpt(system_prompt, prompt, max_tokens=5, temperature=0., stream=False)
-
-            # # for debug
-            # response = '11.'
-
 
             # remove all the non-numeric characters
             try:
@@ -591,7 +605,35 @@ class VisualCOT_AOKVQA:
             ]
 
             if self.args.debug:
-                print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> ChatGPT response ==> response: {response['choices'][0]['message']['content']}, result: {result}")
+                print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> ChatGPT response ==> response: {response}, result: {result}")
+
+        elif self.args.engine == "mistral":
+            response = self.query_mistral(system_prompt, prompt, max_tokens=5, temperature=0., stream=False)
+
+            # remove all the non-numeric characters
+            try:
+                result = ''.join(filter(str.isdigit, response))
+                result = int(result)
+            except:
+                result = 0
+                print(f'Warning: The returned object index is not a number: {response}. The selected index is set to 0.')
+
+            if result >= len(obj_list):
+                result = 0
+                print(f"Warning: The selected object index is out of range. The selected index is set to 0.")
+
+            self.current_conversation = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": response}
+            ]
+
+            if self.args.debug:
+                print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> Mistral response ==> response: {response}, result: {result}")
+
+
+
+
 
         elif self.args.engine == "chat-test":
             print([{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}])
@@ -654,7 +696,13 @@ class VisualCOT_AOKVQA:
         if self.args.debug:
             print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> Construct prompt for getting global caption ==> {prompt}")
 
-        response = self.query_gpt(system_prompt, prompt)
+        if self.args.engine == "chat":
+            response = self.query_gpt(system_prompt, prompt)
+        elif self.args.engine == "mistral":
+            response = self.query_mistral(system_prompt, prompt)
+        else:
+            assert False, f"Invalid engine: {self.args.engine}"
+
         return response
 
     def sample_inference(self, scene_graph_attr, thoughts_list=None):
@@ -756,8 +804,10 @@ class VisualCOT_AOKVQA:
                         plist.append(response['choices'][0]['logprobs']['token_logprobs'][ii])
                     pred_answer_list.append(process_answer(response['choices'][0]["text"]))
                     pred_prob_list.append(sum(plist))
-            elif self.args.engine == "chat":
 
+
+
+            elif self.args.engine == "chat":
                 result = self.query_gpt(system_prompt, prompt)
 
                 if self.chain_of_thoughts:
@@ -771,6 +821,23 @@ class VisualCOT_AOKVQA:
                         result.split('Explanation:')[0].split('Answer:')[1].strip()
                     )
                     pred_prob_list.append(0)
+
+            elif self.args.engine == "mistral":
+                result = self.query_mistral(system_prompt, prompt)
+
+                if self.chain_of_thoughts:
+                    pred_answer_list.append(
+                        result.split('Explanation:')[0].split('Answer:')[1].strip()
+                    )
+                    thought = result.split('Explanation:')[1].strip()
+                    pred_prob_list.append(0)
+                else:
+                    pred_answer_list.append(
+                        result.split('Explanation:')[0].split('Answer:')[1].strip()
+                    )
+                    pred_prob_list.append(0)
+
+
 
             elif self.args.engine == "chat-test":
                 print([{"role": "system", "content": system_prompt},{"role": "user", "content": prompt}])
