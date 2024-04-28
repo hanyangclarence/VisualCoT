@@ -8,7 +8,7 @@ import json
 import time
 import torch
 import random
-import openai
+from openai import AzureOpenAI
 from tqdm import tqdm
 from transformers import GPT2Tokenizer
 import pdb
@@ -80,7 +80,6 @@ class VisualCOT_AOKVQA:
         ## loading input questions (and answer for reference accuracy computing)
         self.apikey_list = apikey_list
         self.apikey_idx = 0
-        openai.api_key = self.apikey_list[self.apikey_idx]
 
         self.device = torch.device(args.device)
 
@@ -150,13 +149,13 @@ class VisualCOT_AOKVQA:
         self.temp_question = "What is the person doing?"
 
     def sleep(self, sleep_time=1.5, switch_key=False):
-        if self.args.engine == "codex":
-            sleep_time = 0.1
-        if switch_key:
-            self.apikey_idx += 1
-            if self.apikey_idx >= len(self.apikey_list):
-                self.apikey_idx = 0
-        openai.api_key = self.apikey_list[self.apikey_idx]
+        # if self.args.engine == "codex":
+        #     sleep_time = 0.1
+        # if switch_key:
+        #     self.apikey_idx += 1
+        #     if self.apikey_idx >= len(self.apikey_list):
+        #         self.apikey_idx = 0
+        # openai.api_key = self.apikey_list[self.apikey_idx]
         time.sleep(sleep_time)
 
     def initialize_llama(self):
@@ -212,7 +211,7 @@ class VisualCOT_AOKVQA:
     def decode_scene_graph(self, sg_attr):
         attr_list = []
         for attr in sg_attr:
-            attr_list.append(attr[1])
+            attr_list.append(attr['caption'])
 
         text = ""
         text += " ".join(attr_list)
@@ -226,15 +225,16 @@ class VisualCOT_AOKVQA:
 
         attr_list = []
         for attr_id, attr in enumerate(concept_graph):
-            tmp_attr = [attr['class'], attr['caption']]
-            attr_list.append(tmp_attr)
+            attr_list.append(attr)
 
-        attr_list.sort(key=lambda x: x[0], reverse=True)
+        attr_list.sort(key=lambda x: x['class'], reverse=True)
 
         answer_list = []
         noticed_attr_list = []
         thoughts = []
         answer_text = ""
+
+        self.global_caption = self.get_global_caption(attr_list)
 
         self.current_conversation = []
         rounds = 1 if self.args.all_regional_captions else self.args.rounds
@@ -423,6 +423,31 @@ class VisualCOT_AOKVQA:
         else:
             return thought
 
+    def query_gpt(self, system_prompt: str, prompt: str, **kwargs):
+        client = AzureOpenAI(
+            azure_endpoint="https://yuncong.openai.azure.com/",
+            api_key=self.apikey_list[self.apikey_idx],
+            api_version="2024-02-15-preview"
+        )
+        successful = False
+        while not successful:
+            try:
+                self.sleep()
+                response = client.chat.completions.create(
+                    model="gpt4",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt}
+                    ],
+                    **kwargs
+                )
+                successful = True
+            except Exception as e:
+                print(f'Error found in generating answer: {e}')
+                print(f"Prompt: {prompt}")
+
+        return response.choices[0].message.content
+
     def interactive(self, attr_list):
         question = self.given_question
 
@@ -446,7 +471,7 @@ class VisualCOT_AOKVQA:
             prompt += "\n"
             prompt += f"The index of the most related option is {example['options'].index(example['answer'])}.\n\n===\n"
 
-        obj_list = [obj[0] for obj in attr_list]
+        obj_list = [obj['class'] for obj in attr_list]
         if self.args.engine == "chat" or self.args.engine == "chat-test":
             prompt += "Question: %s\n===\nOptions:" % question
             for idx, option in enumerate(obj_list):
@@ -506,44 +531,13 @@ class VisualCOT_AOKVQA:
                 result = obj_idx_list.index(result)
             else:
                 result = 0
+
+
+
+
         elif self.args.engine == "chat":
-            successful = False
 
-
-
-            # start querying gpt
-            while not successful:
-                try:
-                    self.sleep()
-                    client = openai.OpenAI(api_key=self.apikey_list[self.apikey_idx])
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": prompt}],
-                        max_tokens=5,
-                        temperature=0.,
-                        stream=False,
-                    )
-                    # response = openai.ChatCompletion.create(
-                    #     model="gpt-3.5-turbo",
-                    #     messages=[
-                    #         {"role": "system", "content": system_prompt},
-                    #         {"role": "user", "content": prompt}],
-                    #     max_tokens=5,
-                    #     temperature=0.,
-                    #     stream=False,
-                    #     # stop=["\n", "<|endoftext|>"],
-                    #     logit_bias=logit_bias
-                    # )
-                    successful = True
-                except Exception as e:
-                    print(e)
-                    print(prompt)
-                    current_bias = int(0.8 * current_bias)
-                    self.sleep(switch_key=True)
-            response = response.choices[0].message.content
-
+            response = self.query_gpt(system_prompt, prompt, max_tokens=5, temperature=0., stream=False)
 
             # # for debug
             # response = '11.'
@@ -618,15 +612,28 @@ class VisualCOT_AOKVQA:
     def make_choices_text(self, choices, answer):
         return f"{', '.join(choices)}.", choices[answer]
 
-    def chat_global_caption(self, scene_graph_attr):
-        # TODO: ask gpt to get global caption according to objects and their descriptions in the scene.
-        return 'This is a kitchen with microwave, oven, and refrigerator.'
+    def get_global_caption(self, scene_graph_attr):
+        # TODO: Improve the prompt!
+        system_prompt = "You are a smart agent that can generate a global caption for a scene. \
+                        I have a list of objects and their descriptions in the scene, and I want to get a global caption for the scene. \
+                        The global caption should be in one sentence that provides only high-level information about the scene."
+        prompt = f"Here is the list of objects and their descriptions in the scene:\n"
+        for attr in scene_graph_attr:
+            prompt += f"{attr['class']}: {attr['caption']}\n"
+        prompt += f"Please generate a global caption for the scene."
+
+        if self.args.debug:
+            print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> Construct prompt for getting global caption ==> {prompt}")
+
+        response = self.query_gpt(system_prompt, prompt)
+        return response
+
 
     def sample_inference(self, scene_graph_attr, thoughts_list=None):
 
         question = self.given_question
 
-        caption_i = self.chat_global_caption(scene_graph_attr)
+        caption_i = self.global_caption
 
         default_sg_text = self.decode_scene_graph(scene_graph_attr)
 
@@ -722,35 +729,9 @@ class VisualCOT_AOKVQA:
                     pred_answer_list.append(process_answer(response['choices'][0]["text"]))
                     pred_prob_list.append(sum(plist))
             elif self.args.engine == "chat":
-                successful = False
-                while not successful:
-                    try:
-                        self.sleep()
-                        client = openai.OpenAI(api_key=self.apikey_list[self.apikey_idx])
-                        response = client.chat.completions.create(
-                            model="gpt-3.5-turbo",
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": prompt}
-                            ]
-                        )
-                        # response = openai.ChatCompletion.create(
-                        #     model="gpt-3.5-turbo",
-                        #     messages=[
-                        #         {"role": "system", "content": system_prompt},
-                        #         {"role": "user", "content": prompt}
-                        #     ],
-                        #     max_tokens=40,
-                        #     temperature=0.,
-                        #     stream=False,
-                        # )
-                        successful = True
-                    except Exception as e:
-                        print(e)
-                        print(prompt)
-                        self.sleep(switch_key=True)
 
-                result = response.choices[0].message.content
+                result = self.query_gpt(system_prompt, prompt)
+
                 if self.chain_of_thoughts:
                     pred_answer_list.append(
                         result.split('Explanation:')[0].split('Answer:')[1].strip()
@@ -762,6 +743,7 @@ class VisualCOT_AOKVQA:
                         result.split('Explanation:')[0].split('Answer:')[1].strip()
                     )
                     pred_prob_list.append(0)
+
             elif self.args.engine == "chat-test":
                 print([{"role": "system", "content": system_prompt},{"role": "user", "content": prompt}])
                 pdb.set_trace()
@@ -816,7 +798,6 @@ class VisualCOT_AOKVQA:
                     all_thought_list.append(new_thought_all)
                 else:
                     with torch.no_grad():
-                        # TODO: modify it to dynamically extract features from open-eqa images
                         img_input_list = []
                         img_dir = self.img_dir
                         for img_file in os.listdir(img_dir):
@@ -841,7 +822,6 @@ class VisualCOT_AOKVQA:
                         img_emb /= img_emb.norm(dim=-1, keepdim=True)
                         thought_emb /= thought_emb.norm(dim=-1, keepdim=True)
 
-                        # TODO: debug the following!!!!
                         sim_cands = img_emb @ thought_emb.T  # (num_images, num_text)
                         # find the image that maximizes the similarity
                         img_id = torch.argmax(torch.sum(sim_cands, dim=1)).item()
@@ -878,8 +858,8 @@ class VisualCOT_AOKVQA:
 
         if self.chain_of_thoughts:
             return [pred_answer, prompt, thoughts, all_thoughts, float(maxval),
-                    [attr[0] for attr in scene_graph_attr]]
-        return [pred_answer, prompt, float(maxval), [attr[0] for attr in scene_graph_attr]]
+                    [attr['class'] for attr in scene_graph_attr]]
+        return [pred_answer, prompt, float(maxval), [attr['class'] for attr in scene_graph_attr]]
 
 
 def main():
@@ -951,8 +931,12 @@ def main():
     question = 'Where is the air conditioner?'
 
     answer, answer_list = aokvqa.sample_inference_scenegraph(scenegraph_path, img_dir, question)
-    for ans in answer_list:
-        print(f'Answer: {ans[0]}, Thought: {ans[2]}')
+    for idx, ans in enumerate(answer_list):
+        print(f'\n\n\n===round {idx}===')
+        print(f'Answer: {ans[0]}')
+        print(f'Thought: {ans[2]}')
+        print(f'Prompt: {ans[1]}')
+        print(f'Object attended: {ans[-1]}')
 
 
 

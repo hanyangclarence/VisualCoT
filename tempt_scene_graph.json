@@ -1,50 +1,170 @@
 [
   {
     "class": "Table",
-    "caption": "A wooden table with four legs. It is covered with a red and white checkered tablecloth."
+    "caption": "A wooden table with four legs. It is covered with a red and white checkered tablecloth.",
+    "bbox_extent": [
+        0.4,
+        0.4,
+        0.2
+    ],
+    "bbox_center": [
+        3.8,
+        2.1,
+        1.1
+    ]
   },
   {
     "class": "Chair",
-    "caption": "A wooden chair with a red cushion."
+    "caption": "A wooden chair with a red cushion.",
+    "bbox_extent": [
+        1.1,
+        0.8,
+        0.3
+    ],
+    "bbox_center": [
+        3.8,
+        1.9,
+        1.0
+    ]
   },
   {
     "class": "Air Conditioner",
-    "caption": "A large air conditioner that is mounted on the wall."
+    "caption": "A large air conditioner that is mounted on the wall.",
+    "bbox_extent": [
+        1.0,
+        0.8,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        1.9,
+        0.5
+    ]
   },
   {
     "class": "Couch",
-    "caption": "A large, comfortable couch with a floral pattern."
+    "caption": "A large, comfortable couch with a floral pattern.",
+    "bbox_extent": [
+        1.2,
+        0.9,
+        0.5
+    ],
+    "bbox_center": [
+        3.8,
+        1.0,
+        0.8
+    ]
   },
   {
-      "class": "Lamp",
-      "caption": "A small lamp with a white shade."
+    "class": "Lamp",
+    "caption": "A small lamp with a white shade.",
+    "bbox_extent": [
+        0.8,
+        0.5,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        0.4,
+        0.5
+    ]
   },
   {
-      "class": "Television",
-      "caption": "A large television with a flat screen."
+    "class": "Television",
+    "caption": "A large television with a flat screen.",
+    "bbox_extent": [
+        0.8,
+        0.3,
+        0.1
+    ],
+    "bbox_center": [
+        3.5,
+        1.0,
+        0.2
+    ]
   },
   {
-      "class": "Coffee Table",
-      "caption": "A small coffee table with a glass top."
+    "class": "Coffee Table",
+    "caption": "A small coffee table with a glass top.",
+    "bbox_extent": [
+        0.8,
+        0.5,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        0.4,
+        0.5
+    ]
   },
   {
-      "class": "Bookshelf",
-      "caption": "A large bookshelf filled with books."
+    "class": "Bookshelf",
+    "caption": "A large bookshelf filled with books.",
+    "bbox_extent": [
+        0.8,
+        0.8,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        1.9,
+        0.5
+    ]
   },
   {
-      "class": "Desk",
-      "caption": "A wooden desk with a computer and a lamp."
+    "class": "Desk",
+    "caption": "A wooden desk with a computer and a lamp.",
+    "bbox_extent": [
+        1.0,
+        0.5,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        0.4,
+        0.5
+    ]
   },
   {
-      "class": "Dining Table",
-      "caption": "A large dining table with six chairs."
+    "class": "Dining Table",
+    "caption": "A large dining table with six chairs.",
+    "bbox_extent": [
+        1.2,
+        0.8,
+        0.3
+    ],
+    "bbox_center": [
+        3.8,
+        1.9,
+        1.0
+    ]
   },
   {
-      "class": "Refrigerator",
-      "caption": "A large refrigerator with a freezer on top."
+    "class": "Refrigerator",
+    "caption": "A large refrigerator with a freezer on top.",
+    "bbox_extent": [
+        0.8,
+        0.8,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        1.9,
+        0.5
+    ]
   },
   {
-      "class": "Oven",
-      "caption": "A large oven with a stove on top."
+    "class": "Oven",
+    "caption": "A large oven with a stove on top.",
+    "bbox_extent": [
+        0.8,
+        0.8,
+        0.1
+    ],
+    "bbox_center": [
+        3.6,
+        1.9,
+        0.5
+    ]
   }
 ]
