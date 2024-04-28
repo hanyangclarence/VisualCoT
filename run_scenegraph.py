@@ -262,14 +262,20 @@ class VisualCOT_AOKVQA:
         self.current_conversation = []
         rounds = 1 if self.args.all_regional_captions else self.args.rounds
         for i in range(rounds):
-            # get the most relevant object idx according to llm
-            idx = self.interactive(attr_list)
+            if self.args.all_regional_captions:
+                idx = None
+            else:
+                # get the most relevant object idx according to llm
+                idx = self.interactive(attr_list)
 
             # HERE
             if self.device.type == "cuda":
                 torch.cuda.synchronize()
 
-            noticed_attr_list.append(attr_list[idx])
+            if idx is not None:
+                noticed_attr_list.append(attr_list[idx])
+            else:
+                noticed_attr_list = attr_list.copy()
 
             if self.args.debug:
                 print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> before sample_inference ==> noticed_attr_list: {noticed_attr_list}, thoughts: {thoughts}")
@@ -889,13 +895,8 @@ class VisualCOT_AOKVQA:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--apikey_file', type=str, default="", help='api key; https://openai.com/api/')
-    parser.add_argument('--apikey', type=str, default="", help='api key; https://openai.com/api/')
-    parser.add_argument('--engine', type=str, default='davinci', help='api engine; https://openai.com/api/')
     parser.add_argument('--engine_name', type=str, default='text-davinci-003', help='api engine; https://openai.com/api/')
     parser.add_argument('--caption_type', type=str, default='vinvl_tag', help='vinvl_tag, vinvl, vinvl_sg, vinvl_ocr')
-    parser.add_argument('--n_shot', type=int, default=16, help="number of shots")
-    parser.add_argument('--n_ensemble', type=int, default=1, help="number of ensemble")
-    parser.add_argument('--rounds', type=int, default=3, help="number of interactive rounds")
     parser.add_argument('--image_id', type=int, default=-1, help="selected image id pick example only")
     parser.add_argument('--iterative_strategy', type=str, default="caption", help="caption or sg")
     parser.add_argument('--similarity_metric', type=str, default='imagequestion', help="random/question/imagequestion")
@@ -909,7 +910,6 @@ def main():
     parser.add_argument('--llama_path', type=str, default='/')
     parser.add_argument('--use_blip2', action='store_true')
     parser.add_argument('--choice_only', action='store_true')
-    parser.add_argument('--chain_of_thoughts', action='store_true')
     parser.add_argument('--with_six_gpus', action='store_true')
     parser.add_argument('--with_one_gpu', action='store_true')
     parser.add_argument('--test_only', action='store_true')
@@ -919,7 +919,6 @@ def main():
     parser.add_argument('--remove_caption', action='store_true')
     parser.add_argument('--random_rationale', action='store_true')
     parser.add_argument('--oracle_rationale', action='store_true')
-    parser.add_argument('--all_regional_captions', action='store_true')
     parser.add_argument('--use_attributes_to_see', action='store_true')
     parser.add_argument('--use_caption_to_see', action='store_true')
     parser.add_argument('--pick_example_mode', action='store_true')
@@ -930,8 +929,6 @@ def main():
     parser.add_argument('--verify_threshold', type=float, default=0.0)
     parser.add_argument('--start', type=float, default=0.0, help="start point in validation set (0.0-1.0)")
     parser.add_argument('--end', type=float, default=1.0, help="end point in validation set (0.0-1.0)")
-    parser.add_argument('--with_clip_verify', action='store_true')
-    parser.add_argument('--debug', action='store_true')
     parser.add_argument('--ablation_visual', action='store_true')
     parser.add_argument('--ablation_reason', action='store_true')
     parser.add_argument('--use_v100', action='store_true')
@@ -940,7 +937,20 @@ def main():
     parser.add_argument('--with_blip2_api', action='store_true')
     parser.add_argument('--set_name', type=str, default='aokvqa')
 
+    # used configs
+    parser.add_argument('--apikey', type=str, default="", help='api key; https://openai.com/api/')
+    parser.add_argument('--engine', type=str, default='davinci', help='api engine; https://openai.com/api/')
     parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--debug', action='store_true')
+
+    parser.add_argument('--n_shot', type=int, default=16, help="number of shots")
+    parser.add_argument('--n_ensemble', type=int, default=1, help="number of ensemble")
+    parser.add_argument('--rounds', type=int, default=3, help="number of interactive rounds")
+
+    parser.add_argument('--all_regional_captions', action='store_true')
+    parser.add_argument('--with_clip_verify', action='store_true')
+    parser.add_argument('--chain_of_thoughts', action='store_true')
+
     parser.add_argument('--nearby_threshold', type=float, default=0.5)
 
     args = parser.parse_args()
