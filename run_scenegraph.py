@@ -211,11 +211,31 @@ class VisualCOT_AOKVQA:
     def decode_scene_graph(self, sg_attr):
         attr_list = []
         for attr in sg_attr:
-            attr_list.append(attr['caption'])
+            obj_description = attr['caption']
+            if len(attr['nearby']) > 0:
+                nearby_description = f'Nearby the {attr["class"]} are '
+                nearby_list = attr['nearby']
+                nearby_list = [nearby_obj['class'] for nearby_obj in nearby_list]
+                nearby_description += ', '.join(nearby_list) + '.'
+                obj_description += ' ' + nearby_description.capitalize()
+            attr_list.append(obj_description)
 
         text = ""
         text += " ".join(attr_list)
         return text
+
+    def get_nearby_objects(self, scene_graph_attr, obj):
+        near_obj_list = []
+        for idx, attr in enumerate(scene_graph_attr):
+            if attr['class'] == obj['class'] and attr['caption'] == obj['caption'] \
+               and attr['bbox_center'] == obj['bbox_center'] and attr['bbox_extent'] == obj['bbox_extent']:
+                continue
+
+            curr_obj_center = attr['bbox_center']
+            dist = np.linalg.norm(np.array(obj['bbox_center']) - np.array(curr_obj_center))
+            if dist < self.args.nearby_threshold:
+                near_obj_list.append(attr)
+        return near_obj_list
 
     def sample_inference_scenegraph(self, scenegraph_path: str, img_dir: str, question: str):
         self.given_question = question
@@ -228,6 +248,9 @@ class VisualCOT_AOKVQA:
             attr_list.append(attr)
 
         attr_list.sort(key=lambda x: x['class'], reverse=True)
+        # find nearby objects for each object
+        for attr in attr_list:
+            attr['nearby'] = self.get_nearby_objects(attr_list, attr)
 
         answer_list = []
         noticed_attr_list = []
@@ -620,14 +643,13 @@ class VisualCOT_AOKVQA:
         prompt = f"Here is the list of objects and their descriptions in the scene:\n"
         for attr in scene_graph_attr:
             prompt += f"{attr['class']}: {attr['caption']}\n"
-        prompt += f"Please generate a global caption for the scene."
+        prompt += f"Please generate a concise global caption for the scene that only focus on high-level information."
 
         if self.args.debug:
             print(f"{time.time()}\t{inspect.currentframe().f_lineno} ==> Construct prompt for getting global caption ==> {prompt}")
 
         response = self.query_gpt(system_prompt, prompt)
         return response
-
 
     def sample_inference(self, scene_graph_attr, thoughts_list=None):
 
@@ -915,7 +937,10 @@ def main():
     parser.add_argument('--raw_image_dir', type=str, default="/path/to/your/coco")
     parser.add_argument('--with_blip2_api', action='store_true')
     parser.add_argument('--set_name', type=str, default='aokvqa')
+
     parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--nearby_threshold', type=float, default=0.5)
+
     args = parser.parse_args()
 
     if args.apikey_file != "":
