@@ -868,6 +868,8 @@ class VisualCOT_AOKVQA:
             elif self.chain_of_thoughts:
                 if self.args.random_rationale:
                     assert False
+                if not self.args.with_clip_verify:
+                    assert False
                 thought_list.append(thought)
                 all_thought_list.append(new_thought)
 
@@ -959,10 +961,10 @@ def main():
     for idx, ans in enumerate(answer_list):
         print(f'\n\n\n===round {idx}===')
         print(f'Answer: {ans[0]}')
-        print(f'Thought: {ans[2]}')
+        if args.chain_of_thoughts:
+            print(f'Thought: {ans[2]}')
         print(f'Prompt: {ans[1]}')
         print(f'Object attended: {ans[-1]}')
-
 
 
 if __name__ == '__main__':
