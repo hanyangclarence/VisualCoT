@@ -15,6 +15,7 @@ import pickle
 from transformers import CLIPProcessor, CLIPModel
 from PIL import Image
 import inspect
+from tqdm import tqdm
 
 def set_random_seed(seed):
     random.seed(seed)
@@ -1005,20 +1006,29 @@ def main():
     parser.add_argument('--set_name', type=str, default='aokvqa')
 
     # used configs
+    # system configs
     parser.add_argument('--apikey', type=str, default="", help='api key; https://openai.com/api/')
     parser.add_argument('--engine', type=str, default='davinci', help='api engine; https://openai.com/api/')
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--debug', action='store_true')
 
+    # inference configs
     parser.add_argument('--n_shot', type=int, default=16, help="number of shots")
     parser.add_argument('--n_ensemble', type=int, default=1, help="number of ensemble")
     parser.add_argument('--rounds', type=int, default=3, help="number of interactive rounds")
 
+    # about cot
     parser.add_argument('--all_regional_captions', action='store_true')
     parser.add_argument('--with_clip_verify', action='store_true')
     parser.add_argument('--chain_of_thoughts', action='store_true')
 
+    # about scene graph
     parser.add_argument('--nearby_threshold', type=float, default=0.5)
+
+    # about open-eqa data
+    parser.add_argument('--open_eqa_file', type=str, default='openeqa/open-eqa-v0.json')
+    parser.add_argument('--scene_graph_dir', type=str, default='scene_data')
+    parser.add_argument('--output_file', type=str, default='openeqa_cg_output.json')
 
     args = parser.parse_args()
 
@@ -1030,18 +1040,44 @@ def main():
 
     aokvqa = VisualCOT_AOKVQA(args, apikey_list)
 
-    scenegraph_path = 'tempt_scene_graph.json'
-    img_dir = 'img_dir'
-    question = 'Where is the air conditioner?'
+    # load open-eqa dataset
+    dataset = json.load(open(args.open_eqa_file))
+    print(f'Total questions: {len(dataset)}')
 
-    answer, answer_list = aokvqa.sample_inference_scenegraph(scenegraph_path, img_dir, question)
-    for idx, ans in enumerate(answer_list):
-        print(f'\n\n\n===round {idx}===')
-        print(f'Answer: {ans[0]}')
-        if args.chain_of_thoughts:
-            print(f'Thought: {ans[2]}')
-        print(f'Prompt: {ans[1]}')
-        print(f'Object attended: {ans[-1]}')
+    # load existing results
+    output_file = args.output_file
+    if os.path.exists(output_file):
+        results = json.load(open(output_file))
+        print(f'Fount existing results: {len(results)}')
+    else:
+        results = []
+
+    # load scenegraph data
+    scene_graph_dir = args.scene_graph_dir
+    scene_graph_data = os.listdir(scene_graph_dir)
+    scene_graph_data = [scene for scene in scene_graph_data
+                        if os.path.exists(os.path.join(scene_graph_dir, 'scene_graph.json'))]
+    # filter dataset
+    dataset = [question for question in dataset if question['episode_history'].split('/')[-1] in scene_graph_data]
+
+    # run data
+    for idx, item in enumerate(tqdm(dataset)):
+        question = item['question']
+        question_id = item['question_id']
+        scene_id = item['episode_history'].split('/')[-1]
+        scenegraph_path = os.path.join(scene_graph_dir, scene_id, 'scene_graph.json')
+        img_dir = os.path.join(scene_graph_dir, scene_id, 'images')
+
+        answer, _ = aokvqa.sample_inference_scenegraph(scenegraph_path, img_dir, question)
+        answer = answer[0]
+
+        results.append({'question_id': question_id, 'answer': answer})
+        json.dump(results, open(output_file, 'w'), indent=4)
+
+        print(f'{idx}/{len(dataset)}\n\tScene: {scene_id}\n\tQuestion: {question}\n\tAnswer: {answer}\n')
+
+    print(f'Finished! Total results: {len(results)}')
+    json.dump(results, open(output_file, 'w'), indent=4)
 
 
 if __name__ == '__main__':
