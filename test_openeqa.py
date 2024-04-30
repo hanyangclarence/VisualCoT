@@ -209,7 +209,8 @@ class VisualCOT_AOKVQA:
     def decode_scene_graph(self, sg_attr):
         attr_list = []
         for attr in sg_attr:
-            obj_description = attr['caption']
+            obj_description = attr['caption'] + '.'
+            obj_description = obj_description.capitalize()
             if len(attr['nearby']) > 0:
                 nearby_description = f'Nearby the {attr["class"]} are '
                 nearby_list = attr['nearby']
@@ -461,7 +462,7 @@ class VisualCOT_AOKVQA:
             try:
                 self.sleep()
                 response = client.chat.completions.create(
-                    model="gpt4",
+                    model="gpt-3.5-turbo",
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": prompt}
@@ -1023,7 +1024,7 @@ def main():
     parser.add_argument('--chain_of_thoughts', action='store_true')
 
     # about scene graph
-    parser.add_argument('--nearby_threshold', type=float, default=0.5)
+    parser.add_argument('--nearby_threshold', type=float, default=0.2)
 
     # about open-eqa data
     parser.add_argument('--open_eqa_file', type=str, default='openeqa/open-eqa-v0.json')
@@ -1051,12 +1052,13 @@ def main():
         print(f'Fount existing results: {len(results)}')
     else:
         results = []
+    completed = [item['question_id'] for item in results]
 
     # load scenegraph data
     scene_graph_dir = args.scene_graph_dir
     scene_graph_data = os.listdir(scene_graph_dir)
     scene_graph_data = [scene for scene in scene_graph_data
-                        if os.path.exists(os.path.join(scene_graph_dir, 'scene_graph.json'))]
+                        if os.path.exists(os.path.join(scene_graph_dir, scene, 'scene_graph.json'))]
     # filter dataset
     dataset = [question for question in dataset if question['episode_history'].split('/')[-1] in scene_graph_data]
 
@@ -1064,13 +1066,18 @@ def main():
     for idx, item in enumerate(tqdm(dataset)):
         question = item['question']
         question_id = item['question_id']
+        if question_id in completed:
+            continue
         scene_id = item['episode_history'].split('/')[-1]
         scenegraph_path = os.path.join(scene_graph_dir, scene_id, 'scene_graph.json')
         img_dir = os.path.join(scene_graph_dir, scene_id, 'images')
+        if not os.path.exists(img_dir):
+            img_dir = None
 
         answer, _ = aokvqa.sample_inference_scenegraph(scenegraph_path, img_dir, question)
-        answer = answer[0]
+        print(f'Question: {question}\nAnswer: {answer[0]}\nPrompt: {answer[1]}')
 
+        answer = answer[0]
         results.append({'question_id': question_id, 'answer': answer})
         json.dump(results, open(output_file, 'w'), indent=4)
 
