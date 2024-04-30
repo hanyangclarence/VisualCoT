@@ -501,7 +501,7 @@ class VisualCOT_AOKVQA:
     def interactive(self, attr_list):
         question = self.given_question
 
-        if self.args.engine == "chat" or self.args.engine == "chat-test":
+        if self.args.engine == "chat" or self.args.engine == "chat-test" or self.args.engine == 'mistral':
             system_prompt = "Let's play a game. I have an image and a complex question about it, and you will give me the " \
                      "name of object in the image you want to look at the most. Please follow the format" \
                      " of the following examples and give me an object name directly.\n"
@@ -522,7 +522,7 @@ class VisualCOT_AOKVQA:
             prompt += f"The index of the most related option is {example['options'].index(example['answer'])}.\n\n===\n"
 
         obj_list = [obj['class'] for obj in attr_list]
-        if self.args.engine == "chat" or self.args.engine == "chat-test":
+        if self.args.engine == "chat" or self.args.engine == "chat-test" or self.args.engine == 'mistral':
             prompt += "Question: %s\n===\nOptions:" % question
             for idx, option in enumerate(obj_list):
                 prompt += f" {idx}: {option};"
@@ -722,7 +722,7 @@ class VisualCOT_AOKVQA:
 
 
         for repeat in range(self.args.n_ensemble):
-            if self.args.engine == "chat" or self.args.engine == "chat-test":
+            if self.args.engine == "chat" or self.args.engine == "chat-test" or self.args.engine == 'mistral':
                 prompt_before_answer = "Based on the given information, I must guess the most possible answer:"
                 system_prompt = "Let's play a game. I have an image and a complex question about it. I will provide you some information about" \
                                 " the image in the context, and you will give me the possible answer and reason to the question. You must provide an answer and can not say unclear or unknown. " \
